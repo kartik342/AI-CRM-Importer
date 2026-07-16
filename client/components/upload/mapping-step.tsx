@@ -13,6 +13,7 @@ interface MappingStepProps {
     index: number,
     crmField: string | null
   ) => void;
+  validationErrors: string[];
 }
 
 const CRM_FIELDS = [
@@ -37,6 +38,7 @@ const CRM_FIELDS = [
 export function MappingStep({
     mapping,
     onMappingChange,
+    validationErrors,
 }: MappingStepProps) {
     return (
         <div className="mt-6">
@@ -52,6 +54,14 @@ export function MappingStep({
                 </p>
 
             </div>
+
+            {validationErrors.length > 0 && (
+                <div className="rounded-md border mb-3 border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {validationErrors.map((error) => (
+                    <p key={error}>{error}</p>
+                    ))}
+                </div>
+            )}
 
             <div className="space-y-3">
 
@@ -118,6 +128,8 @@ export function MappingStep({
                 ))}
 
             </div>
+
+            
 
         </div>
     );

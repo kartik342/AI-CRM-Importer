@@ -9,6 +9,7 @@ import { UploadStep } from "./upload-step";
 import { PreviewStep } from "./preview-step";
 import { FileCard } from "./fileCard-step";
 import { MappingStep } from "./mapping-step";
+import { validateMapping } from "@/components/upload/mapping-validation";
 
 interface UploadDialogProps {
   open: boolean;
@@ -23,7 +24,6 @@ interface ColumnMapping {
 
 
 
-
 export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
 
   const [file, setFile] = useState<File | null>(null);
@@ -31,6 +31,7 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
   const [step, setStep] = useState<"upload" | "preview" | "mapping" | "result">("upload");
   const [mapping, setMapping] = useState<ColumnMapping[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleFileChange = async(
     event: React.ChangeEvent<HTMLInputElement>
@@ -72,22 +73,84 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
     setStep("upload");
   };
 
- const handleMappingChange = (
-  index: number,
-  crmField: string | null
-) => {
-  setMapping((prev) => {
-    const updatedMapping = prev.map((item, i) =>
-      i === index
-        ? { ...item, crmField }
-        : item
-    );
+  const handleGenerateMapping = async () => {
+    if (!file) return;
 
-    console.log(updatedMapping);
+    setIsLoading(true);
 
-    return updatedMapping;
-  });
-};
+    try {
+        const formData = new FormData();
+
+        formData.append("file", file);
+
+        const response = await fetch(
+          "http://localhost:5000/api/import",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const result = await response.json();
+
+        console.log(result);
+
+        setMapping(result.response.mapping);
+
+        setStep("mapping");
+      } finally {
+        setIsLoading(false);
+    }
+  };
+
+
+  const handleContinue = async () => {
+    if (step === "upload") {
+      handleImport();
+      return;
+    }
+
+    if (step === "preview") {
+      await handleGenerateMapping();
+      return;
+    }
+
+    if (step === "mapping") {
+      console.log("Inside mapping step");
+
+      const validation = validateMapping(mapping);
+
+      console.log(validation);
+      console.log(mapping);
+
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        return;
+      }
+      setValidationErrors([]);
+
+      console.log("Validation passed");
+
+
+      // await handleImportData();
+    }
+
+  };
+
+
+  const handleMappingChange = ( index: number, crmField: string | null ) => {
+    setMapping((prev) => {
+      const updatedMapping = prev.map((item, i) =>
+        i === index
+          ? { ...item, crmField }
+          : item
+      );
+
+      console.log(updatedMapping);
+
+      return updatedMapping;
+    });
+  };
 
   return (
     <Dialog
@@ -145,6 +208,7 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
                 <MappingStep
                     mapping={mapping}
                     onMappingChange={handleMappingChange}
+                    validationErrors={validationErrors}
                 />
             )}
 
@@ -181,44 +245,15 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
             {step === "upload" ? "Cancel" : "Back"}
           </Button>
 
+
           <Button
             disabled={!file || isLoading}
-            onClick={async () => {
-              if (step === "upload") {
-                handleImport();
-              } else if (step === "preview") {
-
-                  setIsLoading(true);
-
-                  try {
-                      const formData = new FormData();
-
-                      formData.append("file", file!);
-
-                      const response = await fetch(
-                        "http://localhost:5000/api/import",
-                        {
-                          method: "POST",
-                          body: formData,
-                        }
-                      );
-
-                      const result = await response.json();
-
-                      console.log(result);
-
-                      setMapping(result.response.mapping);
-
-                      setStep("mapping");
-
-                    } finally {
-                      setIsLoading(false);
-                  }
-                }
-            }}
+            onClick={handleContinue}
           >
             {step === "upload" ? "Continue" : "Import"}
           </Button>
+
+        
 
         </div>
         
