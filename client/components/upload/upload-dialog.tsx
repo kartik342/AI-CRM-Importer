@@ -103,6 +103,31 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
     }
   };
 
+  const handleImportRecords = async () => {
+    if (!file) return;
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    formData.append(
+      "mapping",
+      JSON.stringify(mapping)
+    );
+
+    const response = await fetch(
+      "http://localhost:5000/api/import/records",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const result = await response.json();
+
+    console.log(result);
+  };
+
 
   const handleContinue = async () => {
     if (step === "upload") {
@@ -116,23 +141,16 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
     }
 
     if (step === "mapping") {
-      console.log("Inside mapping step");
-
       const validation = validateMapping(mapping);
-
-      console.log(validation);
-      console.log(mapping);
 
       if (!validation.isValid) {
         setValidationErrors(validation.errors);
         return;
       }
+
       setValidationErrors([]);
 
-      console.log("Validation passed");
-
-
-      // await handleImportData();
+      await handleImportRecords();
     }
 
   };

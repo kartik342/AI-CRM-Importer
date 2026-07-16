@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { importContacts } from "../controllers/import.contoller";
+import { importContacts, importRecords } from "../controllers/import.contoller";
 
 const router = Router();
 
@@ -11,6 +11,6 @@ const upload = multer({
 
 router.post("/import", upload.single("file"), importContacts);
 
-
+router.post("/import/records", upload.single("file"), importRecords);
 
 export default router;
