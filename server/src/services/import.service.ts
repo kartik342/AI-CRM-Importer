@@ -21,6 +21,12 @@ export function parseCsv(file: Express.Multer.File) {
   return data;
 }
 
+const MERGE_FIELDS: (keyof CRMRecord)[] = [
+  "name",
+  "description",
+  "crm_note",
+];
+
 
 export function transformRows(
   rows: Record<string, string>[],
@@ -45,8 +51,14 @@ export function transformRows(
         continue;
       }
 
-      // Merge multiple columns with a single space
-      crmRecord[map.crmField] = values.join(" ");
+      // Merge only fields that should combine multiple CSV columns
+      if (MERGE_FIELDS.includes(map.crmField)) {
+        crmRecord[map.crmField] = values.join(" ");
+      } else {
+        // For fields like email, phone, company, city, etc.
+        // use only the first mapped value.
+        crmRecord[map.crmField] = values[0];
+      }
     }
 
     return crmRecord;

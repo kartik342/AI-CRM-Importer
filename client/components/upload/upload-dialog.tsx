@@ -10,6 +10,25 @@ import { PreviewStep } from "./preview-step";
 import { FileCard } from "./fileCard-step";
 import { MappingStep } from "./mapping-step";
 import { validateMapping } from "@/components/upload/mapping-validation";
+import { ResultStep } from "./result-step";
+
+interface CRMRecord {
+  created_at?: string;
+  name?: string;
+  email?: string;
+  country_code?: string;
+  mobile_without_country_code?: string;
+  company?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  lead_owner?: string;
+  crm_status?: string;
+  crm_note?: string;
+  data_source?: string;
+  possession_time?: string;
+  description?: string;
+}
 
 interface UploadDialogProps {
   open: boolean;
@@ -21,6 +40,20 @@ interface ColumnMapping {
   crmField: string | null;
 }
 
+interface InvalidRecord {
+  row: CRMRecord;
+  errors: string[];
+}
+
+interface ImportResult {
+  summary: {
+    totalRecords: number;
+    validRecords: number;
+    invalidRecords: number;
+  };
+  validRecords: CRMRecord[];
+  invalidRecords: InvalidRecord[];
+}
 
 
 
@@ -32,6 +65,7 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
   const [mapping, setMapping] = useState<ColumnMapping[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const handleFileChange = async(
     event: React.ChangeEvent<HTMLInputElement>
@@ -124,7 +158,8 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
     );
 
     const result = await response.json();
-
+    setImportResult(result);
+    setStep("result");
     console.log(result);
   };
 
@@ -228,6 +263,11 @@ export function UploadDialog({ open,onOpenChange }: UploadDialogProps) {
                     onMappingChange={handleMappingChange}
                     validationErrors={validationErrors}
                 />
+            )}
+
+            {/* Result Step */}
+            {step === "result" && importResult && (
+              <ResultStep result={importResult} />
             )}
 
         </div>
